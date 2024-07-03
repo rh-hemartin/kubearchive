@@ -1,0 +1,38 @@
+# Copyright KubeArchive Authors
+# SPDX-License-Identifier: Apache-2.0
+---
+name: Release
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - run: echo "Branch ${{ github.ref }} of repository ${{ github.repository }}."
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.2.0
+        with:
+          version: latest
+      - name: Install ko
+        uses: ko-build/setup-ko@v0.6
+      - name: Install 'release-notes'
+        run: go install k8s.io/release/cmd/release-notes@latest
+      - name: Generate notes
+        env:
+          OCI_REPOSITORY: ${{ vars.OCI_REPOSITORY }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+        run: |
+          ko login ${{ vars.OCI_REGISTRY }} --username ${{ secrets.OCI_USERNAME }} --password ${{ secrets.OCI_PASSWORD }}
+          helm registry login ${{ vars.OCI_REGISTRY }} --username ${{ secrets.OCI_USERNAME }} --password ${{ secrets.OCI_PASSWORD }}
+          gh auth login --with-token < ${{ secrets.GITHUB_TOKEN }}
+
+          bash hack/release.sh

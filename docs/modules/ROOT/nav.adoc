@@ -1,4 +1,5 @@
 * KubeArchive Configuration
 ** xref:configuration/kubearchiveconfig.adoc[Configuration]
 * Contributors
+** xref:contributors/release.adoc[]
 ** xref:contributors/guide.adoc[Guide]
