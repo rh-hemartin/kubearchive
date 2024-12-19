@@ -4,22 +4,22 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: "{{ tpl .Values.apiServer.cert . }}"
-  namespace: {{ .Release.Namespace }}
+  name: "kubearchive-api-server-certificate"
+  namespace: kubearchive
   labels:
-    app.kubernetes.io/name: "{{ tpl .Values.apiServer.cert . }}"
+    app.kubernetes.io/name: "kubearchive-api-server-certificate"
     app.kubernetes.io/component: api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
 spec:
   isCA: false
-  commonName: {{ tpl .Values.apiServer.name . }}
-  secretName: "{{ tpl .Values.apiServer.secret . }}"
+  commonName: kubearchive-api-server
+  secretName: "kubearchive-api-server-tls"
   duration: 720h  # 30 days
   renewBefore: 360h  # 15 days
   subject:
     organizations:
-      - {{ required "An organization in the API Server certificate must be specified" .Release.Name }}
+      - kubearchive
   privateKey:
     algorithm: ECDSA
     size: 256
@@ -28,9 +28,9 @@ spec:
     - key encipherment
   dnsNames:
     - localhost
-    - {{ tpl .Values.apiServer.name . }}
-    - "{{ tpl .Values.apiServer.name . }}.{{ .Release.Namespace }}.svc"
+    - kubearchive-api-server
+    - "kubearchive-api-server.kubearchive.svc"
   issuerRef:
-    name: "{{ .Release.Name }}"
+    name: "kubearchive"
     kind: Issuer
     group: cert-manager.io

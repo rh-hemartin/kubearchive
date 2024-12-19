@@ -1,17 +1,16 @@
 # Copyright KubeArchive Authors
 # SPDX-License-Identifier: Apache-2.0
-# permissions for end users to edit kubearchiveconfigs.
-{{- $configEditor := tpl "{{ tpl .Values.operator.name . }}-config-editor" . -}}
 ---
+# Permissions for end users to edit kubearchiveconfigs.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ $configEditor }}
+  name: kubearchive-operator-config-editor
   labels:
-    app.kubernetes.io/name: {{ $configEditor }}
+    app.kubernetes.io/name: kubearchive-operator-config-editor
     app.kubernetes.io/component: operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
 rules:
   - apiGroups:
       - kubearchive.kubearchive.org

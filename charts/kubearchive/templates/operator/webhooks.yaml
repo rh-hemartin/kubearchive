@@ -1,6 +1,5 @@
 # Copyright KubeArchive Authors
 # SPDX-License-Identifier: Apache-2.0
-{{- $webhooksServiceName := tpl "{{ tpl .Values.operator.name . }}-webhooks" . -}}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
@@ -10,7 +9,7 @@ metadata:
     app.kubernetes.io/name: kubearchive-mutating-webhook-configuration
     app.kubernetes.io/component: operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
   annotations:
     cert-manager.io/inject-ca-from: kubearchive/kubearchive-operator-certificate
 webhooks:
@@ -18,8 +17,8 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: {{ $webhooksServiceName }}
-        namespace: {{ .Release.Namespace }}
+        name: kubearchive-operator-webhooks
+        namespace: kubearchive
         path: /mutate-kubearchive-kubearchive-org-v1alpha1-kubearchiveconfig
     failurePolicy: Fail
     name: mkubearchiveconfig.kb.io
@@ -43,7 +42,7 @@ metadata:
     app.kubernetes.io/name: kubearchive-validating-webhook-configuration
     app.kubernetes.io/component: operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
   annotations:
     cert-manager.io/inject-ca-from: kubearchive/kubearchive-operator-certificate
 webhooks:
@@ -51,8 +50,8 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: {{ $webhooksServiceName }}
-        namespace: {{ .Release.Namespace }}
+        name: kubearchive-operator-webhooks
+        namespace: kubearchive
         path: /validate-kubearchive-kubearchive-org-v1alpha1-kubearchiveconfig
     failurePolicy: Fail
     name: vkubearchiveconfig.kb.io

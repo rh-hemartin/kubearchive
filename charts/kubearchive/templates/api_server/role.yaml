@@ -4,12 +4,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: "{{ tpl .Values.apiServer.name . }}"
+  name: "kubearchive-api-server"
   labels:
-    app.kubernetes.io/name: "{{ tpl .Values.apiServer.name . }}"
+    app.kubernetes.io/name: "kubearchive-api-server"
     app.kubernetes.io/component: api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
 rules:
   - apiGroups:
       - authorization.k8s.io

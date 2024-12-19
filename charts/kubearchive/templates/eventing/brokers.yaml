@@ -1,11 +1,12 @@
 # Copyright KubeArchive Authors
 # SPDX-License-Identifier: Apache-2.0
 ---
+
 apiVersion: eventing.knative.dev/v1
 kind: Broker
 metadata:
-  name: {{ .Release.Name }}-broker
-  namespace: {{ .Release.Namespace }}
+  name: kubearchive-broker
+  namespace: kubearchive
 spec:
   delivery:
     retry: 4
@@ -16,13 +17,13 @@ spec:
       ref:
         apiVersion: eventing.knative.dev/v1
         kind: Broker
-        name: {{ .Release.Name }}-dls
+        name: kubearchive-dls
 ---
 apiVersion: eventing.knative.dev/v1
 kind: Broker
 metadata:
-  name: {{ .Release.Name }}-dls
-  namespace: {{ .Release.Namespace }}
+  name: kubearchive-dls
+  namespace: kubearchive
 spec:
   delivery:
     retry: 4

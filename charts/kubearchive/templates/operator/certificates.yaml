@@ -4,18 +4,18 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: "{{ tpl .Values.operator.cert . }}"
-  namespace: {{ .Release.Namespace }}
+  name: "kubearchive-operator-certificate"
+  namespace: kubearchive
   labels:
-    app.kubernetes.io/name: "{{ tpl .Values.operator.cert . }}"
+    app.kubernetes.io/name: "kubearchive-operator-certificate"
     app.kubernetes.io/component: operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
 spec:
   dnsNames:
-    - "{{ tpl .Values.operator.name . }}-webhooks.{{ .Release.Namespace }}.svc"
-    - "{{ tpl .Values.operator.name . }}-webhooks.{{ .Release.Namespace }}.svc.cluster.local"
+    - "kubearchive-operator-webhooks.kubearchive.svc"
+    - "kubearchive-operator-webhooks.kubearchive.svc.cluster.local"
   issuerRef:
     kind: Issuer
-    name: {{ .Release.Name }}
-  secretName: {{ tpl .Values.operator.secret . }}
+    name: kubearchive
+  secretName: kubearchive-operator-tls

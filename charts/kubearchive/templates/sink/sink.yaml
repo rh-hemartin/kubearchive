@@ -4,30 +4,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "{{ tpl .Values.sink.name . }}"
-  namespace: {{ .Release.Namespace }}
+  name: "kubearchive-sink"
+  namespace: kubearchive
   labels:
-    app.kubernetes.io/name: "{{ tpl .Values.sink.name . }}"
+    app.kubernetes.io/name: "kubearchive-sink"
     app.kubernetes.io/component: sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
 spec:
-  replicas: {{ .Values.sink.replicas }}
+  replicas: 1
   selector:
     matchLabels: &labels
-      app: {{ tpl .Values.sink.name . }}
+      app: kubearchive-sink
   template:
     metadata:
       labels: *labels
     spec:
-      serviceAccountName: {{ tpl .Values.sink.name . }}
-      volumes:
-        - name: logging-config
-          configMap:
-            name: kubearchive-logging
+      serviceAccountName: kubearchive-sink
       containers:
-        - name: {{ tpl .Values.sink.name . }}
-          image: {{ .Values.sink.image }}
+        - name: kubearchive-sink
+          image: ko://github.com/kubearchive/kubearchive/cmd/sink
           resources:
             requests:
               cpu: 200m
@@ -37,13 +33,10 @@ spec:
             limits:
               cpu: 200m
               memory: 256Mi
-          volumeMounts:
-            - mountPath: /data/logging
-              name: logging-config
           envFrom:
             # Provide DB URL, user, password, database and port as env vars
             - secretRef:
-                name: {{ .Values.database.secret }}
+                name: kubearchive-database-credentials
           env:
             - name: KUBEARCHIVE_OTEL_MODE
               value: "disabled"
@@ -63,23 +56,21 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: KUBEARCHIVE_LOGGING_DIR
-              value: /data/logging
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name: "{{ tpl .Values.sink.name . }}"
-  namespace: {{ .Release.Namespace }}
+  name: "kubearchive-sink"
+  namespace: kubearchive
   labels:
-    app.kubernetes.io/name: "{{ tpl .Values.sink.name . }}"
+    app.kubernetes.io/name: "kubearchive-sink"
     app.kubernetes.io/component: sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
 spec:
   selector:
-    app: {{ tpl .Values.sink.name . }}
+    app: kubearchive-sink
   ports:
-    - protocol: {{ .Values.sink.protocol }}
-      port: {{ .Values.sink.port }}
-      targetPort: {{ .Values.sink.targetPort }}
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

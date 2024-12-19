@@ -28,9 +28,6 @@ go.work
 venv/
 __pycache__/
 
-# Helm generated files
-charts/generated/
-
 # Antora related things
 node_modules/
 build/

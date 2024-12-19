@@ -38,9 +38,8 @@ rm -f ${PATCH}
 
 # Generate role.
 echo "Generating role."
-${LOCALBIN}/controller-gen rbac:roleName="replaceme" \
-    paths="./..." output:stdout | \
-    sed -e 's/replaceme/{{ tpl .Values.operator.name . }}/' > ../../charts/kubearchive/templates/operator/role.yaml
+${LOCALBIN}/controller-gen rbac:roleName="kubearchive-operator" \
+    paths="./..." output:stdout > ../../charts/kubearchive/templates/operator/role.yaml
 
 echo "Generating deep copy code."
 # Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.

@@ -4,17 +4,18 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: "{{ tpl .Values.sink.watchRole . }}"
+  name: "kubearchive-sink-watch"
+  namespace: kubearchive
   labels:
-    app.kubernetes.io/name: "{{ tpl .Values.sink.watchRole . }}"
+    app.kubernetes.io/name: "kubearchive-sink-watch"
     app.kubernetes.io/component: sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
 subjects:
   - kind: ServiceAccount
-    name: {{ tpl .Values.sink.name . }}
-    namespace: {{ .Release.Namespace }}
+    name: kubearchive-sink
+    namespace: kubearchive
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ tpl .Values.sink.watchRole . }}
+  name: kubearchive-sink-watch

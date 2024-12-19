@@ -1,12 +1,11 @@
 # Copyright KubeArchive Authors
 # SPDX-License-Identifier: Apache-2.0
-{{- $caName := tpl "{{ .Release.Name }}-ca" . -}}
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: "{{ $caName }}"
-  namespace: {{ .Release.Namespace }}
+  name: "kubearchive-ca"
+  namespace: kubearchive
 spec:
   selfSigned: {}
 
@@ -14,17 +13,17 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: "{{ $caName }}"
-  namespace: {{ .Release.Namespace }}
+  name: "kubearchive-ca"
+  namespace: kubearchive
 spec:
   isCA: true
   commonName: kubearchive-ca-certificate
-  secretName: "{{ $caName }}"
+  secretName: "kubearchive-ca"
   privateKey:
     algorithm: ECDSA
     size: 256
   issuerRef:
-    name: "{{ $caName }}"
+    name: "kubearchive-ca"
     kind: Issuer
     group: cert-manager.io
 
@@ -32,8 +31,8 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: "{{ .Release.Name }}"
-  namespace: {{ .Release.Namespace }}
+  name: "kubearchive"
+  namespace: kubearchive
 spec:
   ca:
-    secretName: "{{ $caName }}"
+    secretName: "kubearchive-ca"

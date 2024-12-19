@@ -4,30 +4,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "{{ tpl .Values.apiServer.name . }}"
-  namespace: {{ .Release.Namespace }}
+  name: "kubearchive-api-server"
+  namespace: kubearchive
   labels:
-    app.kubernetes.io/name: "{{ tpl .Values.apiServer.name . }}"
+    app.kubernetes.io/name: "kubearchive-api-server"
     app.kubernetes.io/component: api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
 spec:
   replicas: 1
   selector:
     matchLabels: &labels
-      app: {{ tpl .Values.apiServer.name . }}
+      app: kubearchive-api-server
   template:
     metadata:
       labels: *labels
     spec:
-      serviceAccountName: {{ tpl .Values.apiServer.name . }}
+      serviceAccountName: kubearchive-api-server
       volumes:
         - name: tls-secret
           secret:
-            secretName: {{ tpl .Values.apiServer.secret . }}
+            secretName: kubearchive-api-server-tls
       containers:
-        - name: {{ tpl .Values.apiServer.name . }}
-          image: {{ required "An API Server container image is required" .Values.apiServer.image }}
+        - name: kubearchive-api-server
+          image: ko://github.com/kubearchive/kubearchive/cmd/api
           resources:
             requests:
               cpu: 200m
@@ -45,7 +45,7 @@ spec:
           envFrom:
             # Provide DB URL, user, password, database and port as env vars
             - secretRef:
-                name: {{ .Values.database.secret }}
+                name: kubearchive-database-credentials
           env:
             - name: GIN_MODE
               value: "release"
@@ -64,9 +64,9 @@ spec:
                 resourceFieldRef:
                   resource: limits.cpu
             - name: CACHE_EXPIRATION_AUTHORIZED
-              value: "{{ .Values.apiServer.cache.expirationAuthenticated }}"
+              value: "10m"
             - name: CACHE_EXPIRATION_UNAUTHORIZED
-              value: "{{ .Values.apiServer.cache.expirationUnauthenticated }}"
+              value: "1m"
           livenessProbe:
             httpGet:
               path: /livez
@@ -81,18 +81,18 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: "{{ tpl .Values.apiServer.name . }}"
-  namespace: {{ .Release.Namespace }}
+  name: "kubearchive-api-server"
+  namespace: kubearchive
   labels:
-    app.kubernetes.io/name: "{{ tpl .Values.apiServer.name . }}"
+    app.kubernetes.io/name: "kubearchive-api-server"
     app.kubernetes.io/component: api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: "{{ .Values.releaseVersion }}"
+    app.kubernetes.io/version: ""
 spec:
   selector:
-    app: {{ tpl .Values.apiServer.name . }}
+    app: kubearchive-api-server
   ports:
     - protocol: TCP
-      port: {{ required "An API Server port must be specified" .Values.apiServer.port }}
-      targetPort: {{ required "An API Server targetPort must be specified" .Values.apiServer.port }}
+      port: 8081
+      targetPort: 8081
       name: server
