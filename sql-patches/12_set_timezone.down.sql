@@ -1,0 +1,1 @@
+-- Irreversible change, we don't know the previous Timezone.

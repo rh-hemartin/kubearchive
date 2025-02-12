@@ -8,8 +8,6 @@ set -o xtrace
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd ${SCRIPT_DIR}/..
 
-bash integrations/database/postgresql/install.sh
-
 export CERT_MANAGER_VERSION=v1.9.1
 export KNATIVE_EVENTING_VERSION=v1.15.0
 

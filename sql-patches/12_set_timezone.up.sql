@@ -1,0 +1,3 @@
+-- select current_database() \gset
+-- ALTER DATABASE :current_database SET "TimeZone" TO 'UTC';
+-- Can't apply this using `migrate`, not sure what to do.
