@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -148,7 +149,7 @@ func LogRetrieval() gin.HandlerFunc {
 			}
 			if parsedLine != "" {
 				logsReturned = true
-				c.String(http.StatusOK, parsedLine+"\n")
+				c.String(http.StatusOK, strings.Trim(parsedLine, "\n")+"\n")
 			}
 		}
 
