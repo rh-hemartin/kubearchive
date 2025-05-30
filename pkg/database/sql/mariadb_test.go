@@ -130,7 +130,7 @@ func TestMariaDBWriteResource(t *testing.T) {
 					mock.ExpectRollback()
 				}
 
-				_, dbErr := database.WriteResource(t.Context(), obj, data, insert.Time)
+				_, dbErr := database.WriteResource(t.Context(), obj, data, insert.Time, "jsonPath", []models.LogTuple{}...)
 				if test.err == nil {
 					assert.Nil(t, dbErr)
 				} else {

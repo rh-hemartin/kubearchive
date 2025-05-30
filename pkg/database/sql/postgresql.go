@@ -178,11 +178,61 @@ type postgreSQLDatabase struct {
 	*sqlDatabaseImpl
 }
 
-func (db *postgreSQLDatabase) WriteResource(ctx context.Context, k8sObj *unstructured.Unstructured, data []byte, lastUpdated time.Time) (interfaces.WriteResourceResult, error) {
-	tx, err := db.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return interfaces.WriteResourceResultError, fmt.Errorf("could not begin transaction for resource %s: %s", k8sObj.GetUID(), err)
+// WriteUrls deletes urls for k8sObj before writing urls to prevent duplicates. If logs is empty or nil all urls for
+// k8sObj will be deleted from the database and will not be replaced
+func (db *postgreSQLDatabase) WriteResource(
+	ctx context.Context,
+	k8sObj *unstructured.Unstructured,
+	data []byte,
+	lastUpdated time.Time,
+	jsonPath string,
+	logs ...models.LogTuple,
+) (interfaces.WriteResourceResult, error) {
+	tx, txErr := db.db.BeginTxx(ctx, nil)
+	if txErr != nil {
+		return interfaces.WriteResourceResultError, fmt.Errorf("could not begin transaction for resource %s: %s", k8sObj.GetUID(), txErr)
 	}
+
+	// First we delete the URLs related with the pod
+	if k8sObj.GetKind() == "Pod" {
+		delBuilder := db.deleter.UrlDeleter()
+		delBuilder.Where(db.filter.UuidFilter(delBuilder.Cond, string(k8sObj.GetUID())))
+		query, args := delBuilder.BuildWithFlavor(db.flavor)
+		_, execErr := tx.ExecContext(ctx, query, args...)
+		if execErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				return interfaces.WriteResourceResultError, fmt.Errorf(
+					"delete to database failed: %w and unable to roll back transaction: %w",
+					execErr,
+					rollbackErr,
+				)
+			}
+			return interfaces.WriteResourceResultError, fmt.Errorf("delete to database failed: %w", execErr)
+		}
+
+		for _, log := range logs {
+			logQuery, logArgs := db.inserter.UrlInserter(
+				string(k8sObj.GetUID()),
+				log.Url,
+				log.ContainerName,
+				jsonPath,
+			).BuildWithFlavor(db.flavor)
+			_, logQueryErr := tx.ExecContext(ctx, logQuery, logArgs...)
+			if logQueryErr != nil {
+				rollbackErr := tx.Rollback()
+				if rollbackErr != nil {
+					return interfaces.WriteResourceResultError, fmt.Errorf(
+						"write to database failed: %w and unable to roll back transaction: %w",
+						execErr,
+						rollbackErr,
+					)
+				}
+				return interfaces.WriteResourceResultError, fmt.Errorf("write to database failed: %w", execErr)
+			}
+		}
+	}
+
 	inserter := db.inserter.ResourceInserter(
 		string(k8sObj.GetUID()),
 		k8sObj.GetAPIVersion(),
