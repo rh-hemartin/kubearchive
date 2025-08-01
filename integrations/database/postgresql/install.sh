@@ -69,19 +69,19 @@ else
   exit 1
 fi
 
-# Run migrate from host
-echo "[INFO] Running migrations using migrate CLI..."
-export KUBEARCHIVE_PASSWORD="Databas3Passw0rd"  # notsecret
-if start_port_forward; then
-  # Use 127.0.0.1 instead of localhost to avoid IPv6 resolution issues in CI
-  migrate -verbose \
-    -path migrations/ \
-    -database "postgresql://kubearchive:${KUBEARCHIVE_PASSWORD}@127.0.0.1:${LOCAL_PORT}/kubearchive" \
-    up
-  cleanup_port_forward
-else
-  echo "[ERROR] Failed to establish port-forward for migrations"
-  exit 1
-fi
+# # Run migrate from host
+# echo "[INFO] Running migrations using migrate CLI..."
+# export KUBEARCHIVE_PASSWORD="Databas3Passw0rd"  # notsecret
+# if start_port_forward; then
+#   # Use 127.0.0.1 instead of localhost to avoid IPv6 resolution issues in CI
+#   migrate -verbose \
+#     -path migrations/ \
+#     -database "postgresql://kubearchive:${KUBEARCHIVE_PASSWORD}@127.0.0.1:${LOCAL_PORT}/kubearchive" \
+#     up
+#   cleanup_port_forward
+# else
+#   echo "[ERROR] Failed to establish port-forward for migrations"
+#   exit 1
+# fi
 
-echo "[INFO] Migrations complete."
+# echo "[INFO] Migrations complete."
