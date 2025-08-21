@@ -19,6 +19,7 @@ resources:
   - templates/logging/configmap.yaml
   - templates/logging/secret.yaml
   - templates/operator/certificates.yaml
+  - templates/operator/cluster-role-a13e.yaml
   - templates/operator/kubearchiveconfig_editor_role.yaml
   - templates/operator/kubearchiveconfig_viewer_role.yaml
   - templates/operator/leader_election_role.yaml

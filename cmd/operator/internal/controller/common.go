@@ -229,9 +229,8 @@ func desiredA13e(resources []sourcesv1.APIVersionKindSelector) *sourcesv1.ApiSer
 					},
 				},
 			},
-			NamespaceSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{ApiServerSourceLabelName: ApiServerSourceLabelValue},
-			},
+			// Monitor all namespaces
+			NamespaceSelector: &metav1.LabelSelector{},
 		},
 	}
 
