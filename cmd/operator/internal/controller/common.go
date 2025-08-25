@@ -34,7 +34,7 @@ const (
 	resourceFinalizerName     = "kubearchive.org/finalizer"
 )
 
-func reconcileAllCommonResources(ctx context.Context, client client.Client, mapper meta.RESTMapper, namespace string, resources []kubearchivev1.KubeArchiveConfigResource) (*rbacv1.ClusterRole, error) {
+func reconcileAllCommonResources(ctx context.Context, client client.Client, mapper meta.RESTMapper, namespace string, resources []kubearchivev1.KubeArchiveConfigResource, monitorAllNamespaces bool) (*rbacv1.ClusterRole, error) {
 	log := log.FromContext(ctx)
 
 	log.Info("in ReconcileAllCommonResources")
@@ -55,11 +55,54 @@ func reconcileAllCommonResources(ctx context.Context, client client.Client, mapp
 		return nil, err
 	}
 
-	if err = reconcileA13e(ctx, client, sfres); err != nil {
+	if err = reconcileA13e(ctx, client, sfres, monitorAllNamespaces); err != nil {
 		return nil, err
 	}
 
+	if monitorAllNamespaces {
+		if _, err = reconcileClusterRoleBindingA13e(ctx, client, constants.KubeArchiveNamespace, constants.KubeArchiveApiServerSourceName); err != nil {
+			return nil, err
+		}
+
+	}
+
 	return clusterrole, nil
+}
+
+func reconcileClusterRoleBindingA13e(ctx context.Context, client client.Client, namespace string, name string) (*rbacv1.ClusterRoleBinding, error) {
+	log := log.FromContext(ctx)
+	log.Info("in reconcileClusterRoleBindingA13e " + constants.KubeArchiveApiServerSourceName)
+
+	desired := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     name,
+		},
+		Subjects: []rbacv1.Subject{
+			newSubject(namespace, name),
+		},
+	}
+
+	existing := &rbacv1.ClusterRoleBinding{}
+	err := client.Get(ctx, types.NamespacedName{Name: constants.KubeArchiveApiServerSourceName}, existing)
+	if errors.IsNotFound(err) {
+		err = client.Create(ctx, desired)
+		if err != nil {
+			log.Error(err, "Failed to create ClusterRoleBinding "+constants.KubeArchiveApiServerSourceName)
+			return nil, err
+		}
+
+		return desired, nil
+	} else if err != nil {
+		log.Error(err, "Failed to reconcile ClusterRoleBinding "+constants.KubeArchiveApiServerSourceName)
+		return nil, err
+	}
+
+	return existing, nil
 }
 
 func reconcileServiceAccount(ctx context.Context, client client.Client, namespace string, name string) (*corev1.ServiceAccount, error) {
@@ -171,11 +214,11 @@ func createPolicyRules(ctx context.Context, mapper meta.RESTMapper, resources []
 	return rules
 }
 
-func reconcileA13e(ctx context.Context, client client.Client, resources []sourcesv1.APIVersionKindSelector) error {
+func reconcileA13e(ctx context.Context, client client.Client, resources []sourcesv1.APIVersionKindSelector, monitorAllNamespaces bool) error {
 	log := log.FromContext(ctx)
 
 	log.Info("in reconcileApiServerSource")
-	desired := desiredA13e(resources)
+	desired := desiredA13e(resources, monitorAllNamespaces)
 
 	existing := &sourcesv1.ApiServerSource{}
 	err := client.Get(ctx, types.NamespacedName{Name: constants.KubeArchiveApiServerSourceName, Namespace: constants.KubeArchiveNamespace}, existing)
@@ -200,7 +243,7 @@ func reconcileA13e(ctx context.Context, client client.Client, resources []source
 	return nil
 }
 
-func desiredA13e(resources []sourcesv1.APIVersionKindSelector) *sourcesv1.ApiServerSource {
+func desiredA13e(resources []sourcesv1.APIVersionKindSelector, monitorAllNamespaces bool) *sourcesv1.ApiServerSource {
 	if len(resources) == 0 {
 		// Make sure there's at least one entry to the ApiServerSource starts.
 		resources = append(resources, sourcesv1.APIVersionKindSelector{Kind: "ClusterKubeArchiveConfig", APIVersion: "kubearchive.org/v1"})
@@ -229,9 +272,14 @@ func desiredA13e(resources []sourcesv1.APIVersionKindSelector) *sourcesv1.ApiSer
 					},
 				},
 			},
-			// Monitor all namespaces
-			NamespaceSelector: &metav1.LabelSelector{},
+			NamespaceSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{ApiServerSourceLabelName: ApiServerSourceLabelValue},
+			},
 		},
+	}
+
+	if monitorAllNamespaces {
+		source.Spec.NamespaceSelector = &metav1.LabelSelector{}
 	}
 
 	return source

@@ -6,10 +6,12 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -46,11 +48,12 @@ const (
 )
 
 var (
-	version = "main"
-	commit  = ""
-	date    = ""
-	scheme  = runtime.NewScheme()
-	k9eNs   = os.Getenv("KUBEARCHIVE_NAMESPACE")
+	version              = "main"
+	commit               = ""
+	date                 = ""
+	scheme               = runtime.NewScheme()
+	k9eNs                = os.Getenv("KUBEARCHIVE_NAMESPACE")
+	monitorAllNamespaces = false
 )
 
 func init() {
@@ -73,6 +76,12 @@ func main() {
 	}
 
 	klog.SetSlogLogger(slog.Default()) // klog is used by the election leader process
+
+	monitorAllNamespaces, err = strconv.ParseBool(os.Getenv("KUBEARCHIVE_MONITOR_ALL_NAMESPACES"))
+	if err != nil {
+		slog.Error(fmt.Sprintf("There was a problem parsing 'KUBEARCHIVE_MONITOR_ALL_NAMESPACES'. Need 'true' or 'false', got '%s'.", os.Getenv("KUBEARCHIVE_MONITOR_ALL_NAMESPACES")))
+		os.Exit(1)
+	}
 
 	var enableLeaderElection bool
 	var probeAddr string
@@ -185,18 +194,20 @@ func main() {
 	}
 
 	if err = (&controller.KubeArchiveConfigReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
+		Client:               mgr.GetClient(),
+		Scheme:               mgr.GetScheme(),
+		Mapper:               mgr.GetRESTMapper(),
+		MonitorAllNamespaces: monitorAllNamespaces,
 	}).SetupKubeArchiveConfigWithManager(mgr); err != nil {
 		slog.Error("unable to create controller", "controller", "KubeArchiveConfig", "err", err)
 		os.Exit(1)
 	}
 
 	if err = (&controller.ClusterKubeArchiveConfigReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
+		Client:               mgr.GetClient(),
+		Scheme:               mgr.GetScheme(),
+		Mapper:               mgr.GetRESTMapper(),
+		MonitorAllNamespaces: monitorAllNamespaces,
 	}).SetupClusterKubeArchiveConfigWithManager(mgr); err != nil {
 		slog.Error("unable to create controller", "controller", "ClusterKubeArchiveConfig", "err", err)
 		os.Exit(1)

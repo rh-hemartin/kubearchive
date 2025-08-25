@@ -1,0 +1,9 @@
+= Large Clusters Configuration
+
+KubeArchive is designed and uses some components that need need some configuration changes
+depending on the scale of the load.
+
+== Large Amount Of Namespaces Monitored
+
+When using KubeArchive to monitor a large percentage of your cluster we recommend
+you enable

@@ -30,9 +30,10 @@ import (
 
 // KubeArchiveConfigReconciler reconciles a KubeArchiveConfig object
 type KubeArchiveConfigReconciler struct {
-	Client client.Client
-	Scheme *runtime.Scheme
-	Mapper meta.RESTMapper
+	Client               client.Client
+	Scheme               *runtime.Scheme
+	Mapper               meta.RESTMapper
+	MonitorAllNamespaces bool
 }
 
 //+kubebuilder:rbac:groups=kubearchive.org,resources=clustervacuums;kubearchiveconfigs;namespacevacuums;sinkfilters,verbs=get;list;watch;create;update;patch;delete
@@ -70,7 +71,7 @@ func (r *KubeArchiveConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 			log.Info("Deleting KubeArchiveConfig")
 
-			if _, err := reconcileAllCommonResources(ctx, r.Client, r.Mapper, kaconfig.Namespace, nil); err != nil {
+			if _, err := reconcileAllCommonResources(ctx, r.Client, r.Mapper, kaconfig.Namespace, nil, r.MonitorAllNamespaces); err != nil {
 				return ctrl.Result{}, err
 			}
 
@@ -100,7 +101,7 @@ func (r *KubeArchiveConfigReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	var err error
 	var clusterrole *rbacv1.ClusterRole
-	if clusterrole, err = reconcileAllCommonResources(ctx, r.Client, r.Mapper, kaconfig.Namespace, kaconfig.Spec.Resources); err != nil {
+	if clusterrole, err = reconcileAllCommonResources(ctx, r.Client, r.Mapper, kaconfig.Namespace, kaconfig.Spec.Resources, r.MonitorAllNamespaces); err != nil {
 		return ctrl.Result{}, err
 	}
 

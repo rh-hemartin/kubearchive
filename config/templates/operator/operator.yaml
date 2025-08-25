@@ -29,6 +29,8 @@ spec:
             - --health-probe-bind-address=:8081
             - --leader-elect
           env:
+            - name: KUBEARCHIVE_MONITOR_ALL_NAMESPACES
+              value: "false"
             - name: KUBEARCHIVE_ENABLE_PPROF
               value: "true"
             - name: LOG_LEVEL
