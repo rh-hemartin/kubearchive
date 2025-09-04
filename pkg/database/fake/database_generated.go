@@ -92,8 +92,8 @@ func (f *fakeDatabase) QueryDatabaseSchemaVersion(ctx context.Context) (string, 
 	return f.CurrentSchemaVersion, nil
 }
 
-func (f *fakeDatabase) queryResources(_ context.Context, kind, version, _, _ string, _ int) []*unstructured.Unstructured {
-	return f.filterResourcesByKindAndApiVersion(kind, version)
+func (f *fakeDatabase) queryResources(_ context.Context, kind, version, _, _ string, limit int) []*unstructured.Unstructured {
+	return f.filterResourcesByKindAndApiVersion(kind, version, limit)
 }
 
 func (f *fakeDatabase) QueryLogURL(_ context.Context, _, _, _, _, _ string) (string, string, error) {
@@ -110,7 +110,7 @@ func (f *fakeDatabase) QueryResources(ctx context.Context, kind, version, namesp
 	if name != "" {
 		resources = f.queryNamespacedResourceByName(ctx, kind, version, namespace, name)
 	} else if namespace != "" {
-		resources = f.filterResourcesByKindApiVersionAndNamespace(kind, version, namespace)
+		resources = f.filterResourcesByKindApiVersionAndNamespace(kind, version, namespace, limit)
 	} else {
 		resources = f.queryResources(ctx, kind, version, continueId, continueDate, limit)
 	}
@@ -140,22 +140,30 @@ func (f *fakeDatabase) queryNamespacedResourceByName(_ context.Context, kind, ve
 	return f.filterResourceByKindApiVersionNamespaceAndName(kind, version, namespace, name)
 }
 
-func (f *fakeDatabase) filterResourcesByKindAndApiVersion(kind, apiVersion string) []*unstructured.Unstructured {
+func (f *fakeDatabase) filterResourcesByKindAndApiVersion(kind, apiVersion string, limit int) []*unstructured.Unstructured {
 	var filteredResources []*unstructured.Unstructured
 	for _, resource := range f.resources {
 		if resource.GetKind() == kind && resource.GetAPIVersion() == apiVersion {
 			filteredResources = append(filteredResources, resource)
 		}
 	}
+
+	if limit != 0 && len(filteredResources) > limit {
+		return filteredResources[:limit]
+	}
 	return filteredResources
 }
 
-func (f *fakeDatabase) filterResourcesByKindApiVersionAndNamespace(kind, apiVersion, namespace string) []*unstructured.Unstructured {
+func (f *fakeDatabase) filterResourcesByKindApiVersionAndNamespace(kind, apiVersion, namespace string, limit int) []*unstructured.Unstructured {
 	var filteredResources []*unstructured.Unstructured
 	for _, resource := range f.resources {
 		if resource.GetKind() == kind && resource.GetAPIVersion() == apiVersion && resource.GetNamespace() == namespace {
 			filteredResources = append(filteredResources, resource)
 		}
+	}
+
+	if limit != 0 && len(filteredResources) > limit {
+		return filteredResources[:limit]
 	}
 	return filteredResources
 }

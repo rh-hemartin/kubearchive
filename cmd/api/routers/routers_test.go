@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kubearchive/kubearchive/cmd/api/pagination"
 	"github.com/kubearchive/kubearchive/pkg/database/fake"
 	"github.com/kubearchive/kubearchive/pkg/database/interfaces"
 	"github.com/stretchr/testify/assert"
@@ -44,6 +45,8 @@ func setupRouter(db interfaces.DBReader, core bool) *gin.Engine {
 			c.Set("apiResourceKind", "Crontab")
 		}
 	})
+	router.Use(pagination.Middleware())
+
 	router.GET("/apis/:group/:version/:resourceType", ctrl.GetResources)
 	router.GET("/apis/:group/:version/namespaces/:namespace/:resourceType", ctrl.GetResources)
 	router.GET("/apis/:group/:version/namespaces/:namespace/:resourceType/:name", ctrl.GetResources)
@@ -404,5 +407,63 @@ func TestReadyz(t *testing.T) {
 		router.ServeHTTP(res, req)
 
 		assert.Equal(t, testCase.expected, res.Code)
+	}
+}
+
+func TestPagination(t *testing.T) {
+	testCases := []struct {
+		name              string
+		expectingContinue bool
+		limit             int
+	}{
+		{
+			name:              "limit lower than number of resources",
+			expectingContinue: true,
+			limit:             1,
+		},
+		{
+			// This is difficult because we don't know if there are more resources left on the handler.
+			// The DB only returns up to the limit.
+			name:              "limit equals number of resources",
+			expectingContinue: false, // this ideally should be true
+			limit:             3,
+		},
+		{
+			name:              "limit bigger than number of resources",
+			expectingContinue: false,
+			limit:             4,
+		},
+	}
+
+	pod := &unstructured.Unstructured{}
+	pod.SetKind("Pod")
+	pod.SetAPIVersion("v1")
+	pod.SetName("test")
+	pod.SetNamespace("test")
+
+	resources := []*unstructured.Unstructured{pod, pod, pod}
+
+	router := setupRouter(fake.NewFakeDatabase(resources, []fake.LogUrlRow{}, ""), true)
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			res := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/pods?limit=%d", testCase.limit), nil)
+			router.ServeHTTP(res, req)
+
+			assert.Equal(t, http.StatusOK, res.Code)
+
+			var list unstructured.UnstructuredList
+			err := json.Unmarshal(res.Body.Bytes(), &list)
+			assert.NoError(t, err)
+
+			assert.Equal(t, min(testCase.limit, len(list.Items)), len(list.Items))
+
+			if testCase.expectingContinue {
+				assert.NotEqual(t, "", list.GetContinue())
+			} else {
+				assert.Equal(t, "", list.GetContinue())
+			}
+		})
 	}
 }

@@ -83,7 +83,12 @@ func (c *Controller) GetResources(context *gin.Context) {
 		return
 	}
 
-	continueToken := pagination.CreateToken(lastId, lastDate)
+	var continueToken string
+	// Technically this is not possible as the number of resources is limited by limit
+	if len(resources) >= limit {
+		continueToken = pagination.CreateToken(lastId, lastDate)
+	}
+
 	context.String(http.StatusOK, listString, continueToken, strings.Join(resources, ","))
 }
 
