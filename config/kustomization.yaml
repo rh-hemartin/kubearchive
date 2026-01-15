@@ -35,4 +35,5 @@ resources:
   - templates/operator/configmap.yaml
   - templates/certificates.yaml
   - templates/clusterroles.yaml
+  - templates/kube-system-namespace-rbac.yaml
   - templates/namespace.yaml

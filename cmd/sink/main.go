@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -15,6 +16,8 @@ import (
 	"github.com/kubearchive/kubearchive/pkg/k8sclient"
 	"github.com/kubearchive/kubearchive/pkg/logging"
 	kaObservability "github.com/kubearchive/kubearchive/pkg/observability"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
@@ -71,6 +74,15 @@ func main() {
 		slog.Error("Could not get a kubernetes dynamic client", "error", err)
 		os.Exit(1)
 	}
+
+	kubeSystemNs, err := dynClient.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}).Get(context.Background(), "kube-system", v1.GetOptions{})
+	if err != nil {
+		slog.Error("could not get 'kube-system' namespace", "error", err)
+		os.Exit(1)
+	}
+
+	clusterID := string(kubeSystemNs.GetUID())
+	slog.Info("Cluster ID", "id", clusterID)
 
 	builder, err := logs.NewUrlBuilder()
 	if err != nil {

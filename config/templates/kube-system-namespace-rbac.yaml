@@ -1,0 +1,36 @@
+# Copyright KubeArchive Authors
+# SPDX-License-Identifier: Apache-2.0
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubearchive-get-kube-system-namespace
+  labels:
+    app.kubernetes.io/name: kubearchive-get-kube-system
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: "${NEXT_VERSION}"
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubearchive-get-kube-system-namespace
+  labels:
+    app.kubernetes.io/name: kubearchive-get-kube-system-namespace
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: "${NEXT_VERSION}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubearchive-get-kube-system-namespace
+subjects:
+  - kind: ServiceAccount
+    name: kubearchive-sink
+    namespace: kubearchive
+  - kind: ServiceAccount
+    name: kubearchive-api-server
+    namespace: kubearchive
